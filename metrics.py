@@ -21,6 +21,9 @@ from tqdm import tqdm
 from utils.image_utils import psnr
 from argparse import ArgumentParser
 
+import numpy as np
+import imageio
+
 def readImages(renders_dir, gt_dir):
     renders = []
     gts = []
@@ -28,6 +31,9 @@ def readImages(renders_dir, gt_dir):
     for fname in os.listdir(renders_dir):
         render = Image.open(renders_dir / fname)
         gt = Image.open(gt_dir / fname)
+        # gt = np.array(imageio.imread(gt_dir / fname)).astype(np.float32)
+        raise NotImplementedError()
+
         renders.append(tf.to_tensor(render).unsqueeze(0)[:, :3, :, :].cuda())
         gts.append(tf.to_tensor(gt).unsqueeze(0)[:, :3, :, :].cuda())
         image_names.append(fname)

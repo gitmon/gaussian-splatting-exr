@@ -26,6 +26,7 @@ try:
 except:
     SPARSE_ADAM_AVAILABLE = False
 
+import imageio
 
 def render_set(model_path, name, iteration, views, gaussians, pipeline, background, train_test_exp, separate_sh):
     render_path = os.path.join(model_path, name, "ours_{}".format(iteration), "renders")
@@ -42,8 +43,12 @@ def render_set(model_path, name, iteration, views, gaussians, pipeline, backgrou
             rendering = rendering[..., rendering.shape[-1] // 2:]
             gt = gt[..., gt.shape[-1] // 2:]
 
-        torchvision.utils.save_image(rendering, os.path.join(render_path, '{0:05d}'.format(idx) + ".png"))
-        torchvision.utils.save_image(gt, os.path.join(gts_path, '{0:05d}'.format(idx) + ".png"))
+        # torchvision.utils.save_image(rendering, os.path.join(render_path, '{0:05d}'.format(idx) + ".png"))
+        # torchvision.utils.save_image(gt, os.path.join(gts_path, '{0:05d}'.format(idx) + ".png"))
+        rendering = rendering.permute(1,2,0).cpu().numpy()
+        gt = gt.permute(1,2,0).cpu().numpy()
+        imageio.imwrite(os.path.join(render_path, '{0:05d}'.format(idx) + ".exr"), rendering)
+        imageio.imwrite(os.path.join(gts_path, '{0:05d}'.format(idx) + ".exr"), gt)
 
 def render_sets(dataset : ModelParams, iteration : int, pipeline : PipelineParams, skip_train : bool, skip_test : bool, separate_sh: bool):
     with torch.no_grad():

@@ -226,6 +226,14 @@ def readColmapSceneInfo(path, images, depths, eval, train_test_exp, llffhold=8):
     return scene_info
 
 def readCamerasFromTransforms(path, transformsfile, depths_folder, white_background, is_test, extension=".png"):
+    if extension == ".png":
+        return readCamerasFromTransformsPNG(path, transformsfile, depths_folder, white_background, is_test)
+    elif extension == ".exr":
+        return readCamerasFromTransformsEXR(path, transformsfile, depths_folder, white_background, is_test)
+    else:
+        raise NotImplementedError()
+
+def readCamerasFromTransformsPNG(path, transformsfile, depths_folder, white_background, is_test):
     cam_infos = []
 
     with open(os.path.join(path, transformsfile)) as json_file:
@@ -234,7 +242,7 @@ def readCamerasFromTransforms(path, transformsfile, depths_folder, white_backgro
 
         frames = contents["frames"]
         for idx, frame in enumerate(frames):
-            cam_name = os.path.join(path, frame["file_path"] + extension)
+            cam_name = os.path.join(path, frame["file_path"] + ".png")
 
             # NeRF 'transform_matrix' is a camera-to-world transform
             c2w = np.array(frame["transform_matrix"])
@@ -270,7 +278,47 @@ def readCamerasFromTransforms(path, transformsfile, depths_folder, white_backgro
             
     return cam_infos
 
-def readNerfSyntheticInfo(path, white_background, depths, eval, extension=".png"):
+import imageio
+
+def readCamerasFromTransformsEXR(path, transformsfile, depths_folder, white_background, is_test):
+    cam_infos = []
+
+    with open(os.path.join(path, transformsfile)) as json_file:
+        contents = json.load(json_file)
+        fovx = contents["camera_angle_x"]
+
+        frames = contents["frames"]
+        for idx, frame in enumerate(frames):
+            cam_name = os.path.join(path, frame["file_path"] + ".exr")
+
+            # NeRF 'transform_matrix' is a camera-to-world transform
+            c2w = np.array(frame["transform_matrix"])
+            # change from OpenGL/Blender camera axes (Y up, Z back) to COLMAP (Y down, Z forward)
+            c2w[:3, 1:3] *= -1
+
+            # get the world-to-camera transform and set R, T
+            w2c = np.linalg.inv(c2w)
+            R = np.transpose(w2c[:3,:3])  # R is stored transposed due to 'glm' in CUDA code
+            T = w2c[:3, 3]
+
+            image_path = os.path.join(path, cam_name)
+            image_name = Path(cam_name).stem
+            image = np.array(imageio.imread(image_path)).astype(np.float32)
+
+
+            fovy = focal2fov(fov2focal(fovx, image.shape[0]), image.shape[1])
+            FovY = fovy 
+            FovX = fovx
+
+            depth_path = os.path.join(depths_folder, f"{image_name}.exr") if depths_folder != "" else ""
+
+            cam_infos.append(CameraInfo(uid=idx, R=R, T=T, FovY=FovY, FovX=FovX,
+                            image_path=image_path, image_name=image_name,
+                            width=image.shape[0], height=image.shape[1], depth_path=depth_path, depth_params=None, is_test=is_test))
+            
+    return cam_infos
+
+def readNerfSyntheticInfo(path, white_background, depths, eval, extension=".exr"):
 
     depths_folder=os.path.join(path, depths) if depths != "" else ""
     print("Reading Training Transforms")

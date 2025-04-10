@@ -12,13 +12,15 @@
 from scene.cameras import Camera
 import numpy as np
 from utils.graphics_utils import fov2focal
-from PIL import Image
+# from PIL import Image
 import cv2
+import imageio
 
 WARNED = False
 
 def loadCam(args, id, cam_info, resolution_scale, is_nerf_synthetic, is_test_dataset):
-    image = Image.open(cam_info.image_path)
+    # image = Image.open(cam_info.image_path)
+    image = np.array(imageio.imread(cam_info.image_path)).astype(np.float32)
 
     if cam_info.depth_path != "":
         try:
@@ -39,7 +41,7 @@ def loadCam(args, id, cam_info, resolution_scale, is_nerf_synthetic, is_test_dat
     else:
         invdepthmap = None
         
-    orig_w, orig_h = image.size
+    orig_w, orig_h = image.shape[:2]
     if args.resolution in [1, 2, 4, 8]:
         resolution = round(orig_w/(resolution_scale * args.resolution)), round(orig_h/(resolution_scale * args.resolution))
     else:  # should be a type that converts to float

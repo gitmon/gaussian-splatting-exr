@@ -13,7 +13,7 @@ import torch
 from torch import nn
 import numpy as np
 from utils.graphics_utils import getWorld2View2, getProjectionMatrix
-from utils.general_utils import PILtoTorch
+from utils.general_utils import PILtoTorch, numpyToTorch
 import cv2
 
 class Camera(nn.Module):
@@ -39,7 +39,8 @@ class Camera(nn.Module):
             print(f"[Warning] Custom device {data_device} failed, fallback to default cuda device" )
             self.data_device = torch.device("cuda")
 
-        resized_image_rgb = PILtoTorch(image, resolution)
+        # resized_image_rgb = PILtoTorch(image, resolution)
+        resized_image_rgb = numpyToTorch(image, resolution)
         gt_image = resized_image_rgb[:3, ...]
         self.alpha_mask = None
         if resized_image_rgb.shape[0] == 4:
