@@ -1,0 +1,3 @@
+- delete the "rouka..." from extlibs/xatlas/CMakeLists.txt and replace it with "{$PROJECT_NAME}"
+
+cmake -Bbuild . -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=/usr/bin/gcc -DCMAKE_CXX_COMPILER=/usr/bin/g++ -DCMAKE_PREFIX_PATH=/usr/local/cuda-12.4
