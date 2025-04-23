@@ -77,7 +77,7 @@ def _ssim(img1, img2, window, window_size, channel, size_average=True):
     sigma2_sq = F.conv2d(img2 * img2, window, padding=window_size // 2, groups=channel) - mu2_sq
     sigma12 = F.conv2d(img1 * img2, window, padding=window_size // 2, groups=channel) - mu1_mu2
 
-    data_range = torch.maximum(img1.max(), img2.max())
+    data_range = 1.0 # torch.maximum(img1.max(), img2.max())
     C1 = (0.01 * data_range) ** 2
     C2 = (0.03 * data_range) ** 2
 
