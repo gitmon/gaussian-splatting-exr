@@ -38,7 +38,9 @@ class FusedSSIMMap(torch.autograd.Function):
         return None, None, grad, None
 
 def l1_loss(network_output, gt):
-    return torch.abs((network_output - gt)).mean()
+    # return torch.abs((network_output - gt)).mean()
+    return torch.abs(torch.log2(1 + network_output) - torch.log2(1 + gt)).mean()
+    # return l2_loss(network_output, gt)
 
 def l2_loss(network_output, gt):
     return ((network_output - gt) ** 2).mean()
@@ -75,8 +77,9 @@ def _ssim(img1, img2, window, window_size, channel, size_average=True):
     sigma2_sq = F.conv2d(img2 * img2, window, padding=window_size // 2, groups=channel) - mu2_sq
     sigma12 = F.conv2d(img1 * img2, window, padding=window_size // 2, groups=channel) - mu1_mu2
 
-    C1 = 0.01 ** 2
-    C2 = 0.03 ** 2
+    data_range = torch.maximum(img1.max(), img2.max())
+    C1 = (0.01 * data_range) ** 2
+    C2 = (0.03 * data_range) ** 2
 
     ssim_map = ((2 * mu1_mu2 + C1) * (2 * sigma12 + C2)) / ((mu1_sq + mu2_sq + C1) * (sigma1_sq + sigma2_sq + C2))
 
@@ -84,8 +87,3 @@ def _ssim(img1, img2, window, window_size, channel, size_average=True):
         return ssim_map.mean()
     else:
         return ssim_map.mean(1).mean(1).mean(1)
-
-
-def fast_ssim(img1, img2):
-    ssim_map = FusedSSIMMap.apply(C1, C2, img1, img2)
-    return ssim_map.mean()
